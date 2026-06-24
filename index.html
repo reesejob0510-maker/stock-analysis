@@ -1,0 +1,2511 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Serenity Research · 标的分析</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-base:    #080c14;
+  --bg-surface: #0e1420;
+  --bg-card:    #131a27;
+  --bg-hover:   #1a2336;
+  --border:     #1e2d42;
+  --border-dim: #162030;
+  --text-1:     #e8edf4;
+  --text-2:     #8a9bb2;
+  --text-3:     #4d6080;
+  --accent:     #4f8ef7;
+  --accent-dim: #1a2e50;
+  --green:      #22c55e;
+  --green-dim:  #0d2e1c;
+  --yellow:     #eab308;
+  --yellow-dim: #2a2200;
+  --red:        #ef4444;
+  --red-dim:    #2e1010;
+  --font-sans:  -apple-system, "Helvetica Neue", "PingFang SC", Inter, sans-serif;
+  --font-mono:  "SF Mono", "Fira Code", "Cascadia Code", monospace;
+}
+
+html, body { height: 100%; }
+body {
+  background: var(--bg-base);
+  color: var(--text-1);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ─── Header ─────────────────────────────── */
+.header {
+  height: 52px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 12px;
+  flex-shrink: 0;
+  background: var(--bg-surface);
+}
+.logo {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.3px;
+}
+.logo span { color: var(--accent); }
+.header-sub {
+  font-size: 12px;
+  color: var(--text-3);
+  border-left: 1px solid var(--border);
+  padding-left: 12px;
+  margin-left: 4px;
+}
+.header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.btn-icon {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 10px;
+  color: var(--text-2);
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+  font-family: var(--font-sans);
+}
+.btn-icon:hover { border-color: var(--accent); color: var(--text-1); }
+
+/* ─── Layout ──────────────────────────────── */
+.layout {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ─── Sidebar ─────────────────────────────── */
+.sidebar {
+  width: 340px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+.sidebar-inner { flex: 1; overflow-y: auto; padding: 16px; }
+.sidebar-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+/* Input group */
+.input-group { margin-bottom: 20px; }
+.ticker-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color .2s;
+  margin-bottom: 8px;
+}
+.ticker-wrap:focus-within { border-color: var(--accent); }
+.ticker-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-left: 8px;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+.ticker-badge.us   { background: var(--accent-dim); color: var(--accent); }
+.ticker-badge.crypto { background: var(--yellow-dim); color: var(--yellow); }
+.ticker-badge.unknown { background: var(--bg-hover); color: var(--text-3); }
+#tickerInput {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  padding: 10px 10px 10px 4px;
+  color: var(--text-1);
+  font-size: 16px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  min-width: 0;
+}
+#tickerInput::placeholder { color: var(--text-3); font-weight: 400; text-transform: none; font-size: 13px; }
+.btn-analyze {
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: background .15s;
+  flex-shrink: 0;
+}
+.btn-analyze:hover { background: #3a7de8; }
+.btn-analyze:disabled { background: var(--bg-hover); color: var(--text-3); cursor: not-allowed; }
+
+/* Mode selector */
+.mode-group { margin-bottom: 20px; }
+.mode-options { display: flex; flex-direction: column; gap: 4px; }
+.mode-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all .15s;
+}
+.mode-option:hover { background: var(--bg-hover); }
+.mode-option.active { background: var(--accent-dim); border-color: var(--accent); }
+.mode-radio {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  transition: all .15s;
+  flex-shrink: 0;
+}
+.mode-option.active .mode-radio { border-color: var(--accent); background: var(--accent); }
+.mode-title { font-size: 13px; font-weight: 500; }
+.mode-desc { font-size: 11px; color: var(--text-3); }
+
+/* History */
+.history-group { margin-bottom: 20px; }
+.history-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.history-chip {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all .15s;
+}
+.history-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Tip box */
+.tip-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 8px;
+}
+.tip-box p { font-size: 11.5px; color: var(--text-3); line-height: 1.7; }
+.tip-box p + p { margin-top: 4px; }
+.tip-box code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--bg-hover);
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: var(--text-2);
+}
+
+/* ─── Main output ─────────────────────────── */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.output-header {
+  height: 48px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 12px;
+  flex-shrink: 0;
+  background: var(--bg-surface);
+}
+.output-ticker {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  letter-spacing: 0.5px;
+}
+.output-name { font-size: 13px; color: var(--text-2); }
+.output-actions { margin-left: auto; display: flex; gap: 8px; }
+#outputArea {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 32px;
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: var(--text-3);
+}
+.empty-state .big { font-size: 40px; }
+.empty-state h2 { font-size: 16px; color: var(--text-2); }
+.empty-state p { font-size: 13px; text-align: center; max-width: 320px; }
+.empty-examples { display: flex; gap: 8px; margin-top: 4px; }
+.empty-example {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all .15s;
+}
+.empty-example:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Loading state */
+.loading-bar {
+  height: 2px;
+  background: var(--bg-card);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.loading-bar-inner {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  animation: loadSlide 1.5s ease-in-out infinite;
+}
+@keyframes loadSlide {
+  0%   { width: 0%; margin-left: 0; }
+  50%  { width: 60%; margin-left: 20%; }
+  100% { width: 0%; margin-left: 100%; }
+}
+.loading-label {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.loading-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse .8s ease-in-out infinite alternate;
+}
+@keyframes pulse { from { opacity: .3 } to { opacity: 1 } }
+
+/* ─── Markdown rendering ──────────────────── */
+.md-output { max-width: 840px; }
+.md-output h2 {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 28px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-dim);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.md-output h2:first-child { margin-top: 0; }
+.md-output h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+  margin: 16px 0 6px;
+}
+.md-output p { color: var(--text-1); margin-bottom: 10px; line-height: 1.75; }
+.md-output ul { padding-left: 0; list-style: none; margin-bottom: 10px; }
+.md-output ul li {
+  position: relative;
+  padding-left: 14px;
+  margin-bottom: 6px;
+  color: var(--text-1);
+  line-height: 1.7;
+}
+.md-output ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+.md-output ol { padding-left: 0; list-style: none; counter-reset: ol-counter; margin-bottom: 10px; }
+.md-output ol li {
+  position: relative;
+  padding-left: 22px;
+  margin-bottom: 6px;
+  color: var(--text-1);
+  line-height: 1.7;
+  counter-increment: ol-counter;
+}
+.md-output ol li::before {
+  content: counter(ol-counter) ".";
+  position: absolute;
+  left: 0;
+  color: var(--text-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  top: 1px;
+}
+.md-output code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--accent);
+}
+.md-output strong { font-weight: 600; color: var(--text-1); }
+.md-output em { font-style: italic; color: var(--text-2); }
+.md-output hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 20px 0;
+}
+.md-output blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 10px 16px;
+  background: var(--accent-dim);
+  border-radius: 0 6px 6px 0;
+  margin: 12px 0;
+}
+.md-output blockquote p { margin: 0; color: var(--text-1); }
+
+/* Table */
+.md-output table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0 16px;
+  font-size: 13px;
+}
+.md-output th {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 7px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.md-output td {
+  border: 1px solid var(--border-dim);
+  padding: 8px 12px;
+  color: var(--text-1);
+  vertical-align: top;
+}
+.md-output tr:hover td { background: var(--bg-hover); }
+
+/* Verdict / highlight block */
+.verdict-block {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  padding: 14px 18px;
+  margin-bottom: 24px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-1);
+  line-height: 1.6;
+}
+
+/* Priority badge */
+.priority-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--green-dim);
+  color: var(--green);
+  border: 1px solid var(--green);
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Cursor blink */
+.cursor-blink {
+  display: inline-block;
+  width: 2px;
+  height: 14px;
+  background: var(--accent);
+  margin-left: 2px;
+  vertical-align: middle;
+  animation: blink .7s step-end infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ─── Settings modal ──────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 440px;
+  padding: 24px;
+}
+.modal-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.modal-sub { font-size: 12px; color: var(--text-3); margin-bottom: 20px; }
+.field-label { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-2); margin-bottom: 6px; }
+.field-input {
+  width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 9px 12px;
+  color: var(--text-1);
+  font-size: 13px;
+  font-family: var(--font-mono);
+  outline: none;
+  transition: border-color .15s;
+  margin-bottom: 16px;
+}
+.field-input:focus { border-color: var(--accent); }
+.field-note { font-size: 11px; color: var(--text-3); margin-top: -12px; margin-bottom: 16px; }
+.modal-row { display: flex; gap: 8px; margin-top: 4px; }
+.btn-primary {
+  background: var(--accent);
+  border: none;
+  border-radius: 7px;
+  padding: 9px 18px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: background .15s;
+}
+.btn-primary:hover { background: #3a7de8; }
+.btn-secondary {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 9px 18px;
+  color: var(--text-2);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: all .15s;
+}
+.btn-secondary:hover { border-color: var(--text-2); color: var(--text-1); }
+.api-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: auto;
+}
+.api-status.ok  { background: var(--green-dim); color: var(--green); }
+.api-status.err { background: var(--red-dim);   color: var(--red); }
+.api-status.none { background: var(--bg-hover); color: var(--text-3); }
+
+/* ─── Scrollbar ───────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border); }
+
+/* ─── Autocomplete ────────────────────────── */
+.ticker-outer { position: relative; }
+.autocomplete-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  z-index: 50;
+  overflow: hidden;
+  display: none;
+}
+.autocomplete-dropdown.open { display: block; }
+.ac-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background .1s;
+}
+.ac-item:hover { background: var(--bg-hover); }
+.ac-ticker {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 56px;
+  color: var(--text-1);
+}
+.ac-name {
+  font-size: 12px;
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ac-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.ac-badge.us     { background: var(--accent-dim); color: var(--accent); }
+.ac-badge.crypto { background: var(--yellow-dim); color: var(--yellow); }
+
+/* ─── Summary card ────────────────────────── */
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.summary-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.priority-score {
+  font-size: 36px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.priority-score.p5 { color: var(--green); }
+.priority-score.p4 { color: var(--accent); }
+.priority-score.p3 { color: var(--text-2); }
+.priority-score.p2 { color: var(--yellow); }
+.priority-score.p1 { color: var(--red); }
+.priority-dots {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+.priority-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--bg-hover);
+}
+.priority-dot.filled { background: var(--accent); }
+.priority-dot.filled.p5 { background: var(--green); }
+.priority-dot.filled.p4 { background: var(--accent); }
+.priority-dot.filled.p3 { background: var(--text-3); }
+.priority-dot.filled.p2 { background: var(--yellow); }
+.priority-dot.filled.p1 { background: var(--red); }
+.summary-meta { flex: 1; }
+.summary-verdict {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-1);
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+.summary-missing {
+  font-size: 12px;
+  color: var(--text-3);
+  line-height: 1.5;
+}
+.chain-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.chain-badge.controls { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
+.chain-badge.supplies { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+.chain-badge.benefits { background: var(--bg-hover); color: var(--text-2); border: 1px solid var(--border); }
+.chain-badge.weak     { background: var(--yellow-dim); color: var(--yellow); border: 1px solid var(--yellow); }
+.chain-badge.story    { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); }
+
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.summary-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 7px;
+}
+.scarce-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.scarce-chip {
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 4px;
+}
+.risk-items { display: flex; flex-direction: column; gap: 5px; }
+.risk-item {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+.risk-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--yellow);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+.evidence-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.evidence-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+.evidence-label.strong { color: var(--green); }
+.evidence-label.medium { color: var(--yellow); }
+.evidence-label.weak   { color: var(--red); }
+.evidence-dots { display: flex; gap: 3px; }
+.evidence-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--bg-hover);
+}
+.evidence-dot.filled.strong { background: var(--green); }
+.evidence-dot.filled.medium { background: var(--yellow); }
+.evidence-dot.filled.weak   { background: var(--red); }
+
+/* ─── Sector Tabs ─────────────────────────── */
+.sector-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-card);
+  border-radius: 8px;
+  padding: 3px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+.sector-tab {
+  flex: 1;
+  text-align: center;
+  padding: 5px 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-3);
+  cursor: pointer;
+  border-radius: 5px;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.sector-tab.active {
+  background: var(--bg-surface);
+  color: var(--text-1);
+  box-shadow: 0 1px 3px rgba(0,0,0,.4);
+}
+.sector-tab:hover:not(.active) { color: var(--text-2); }
+
+/* ─── Sector Panel ─────────────────────────── */
+.sector-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 4px;
+}
+.sector-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.sector-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.sector-subtitle {
+  font-size: 11px;
+  color: var(--text-3);
+}
+.chain-layer {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 9px;
+}
+.chain-layer-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+.chain-layer-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.chain-layer-dot.focus { background: var(--yellow); }
+.chain-layer-name {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-2);
+}
+.chain-layer-star {
+  font-size: 10px;
+  color: var(--yellow);
+  font-weight: 700;
+  padding: 1px 5px;
+  background: var(--yellow-dim);
+  border-radius: 3px;
+}
+.chain-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding-left: 13px;
+}
+.chain-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.chain-chip:hover {
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+.chain-chip .chip-ticker {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-1);
+}
+.chain-chip .chip-change { font-size: 11px; font-weight: 600; }
+.chip-change.up   { color: var(--green); }
+.chip-change.down { color: var(--red); }
+.chip-change.flat { color: var(--text-3); }
+.chain-list { display: flex; flex-direction: column; gap: 3px; }
+.chain-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.chain-list-item:hover { border-color: var(--accent); background: var(--bg-hover); }
+.list-left { display: flex; align-items: center; gap: 8px; }
+.list-rank { font-size: 11px; color: var(--text-3); min-width: 14px; text-align: right; }
+.list-ticker { font-family: var(--font-mono); font-size: 13px; font-weight: 700; }
+.list-name { font-size: 11px; color: var(--text-3); }
+.list-change { font-size: 12px; font-weight: 600; }
+.sector-action-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 9px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: all .15s;
+  font-family: var(--font-sans);
+}
+.sector-action-btn:hover { border-color: var(--accent); color: var(--text-1); }
+
+/* ─── Hero Search ─────────────────────────── */
+.hero-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 32px 32px;
+  gap: 20px;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.hero-brand {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text-1);
+}
+.hero-brand span { color: var(--accent); }
+.hero-sub {
+  font-size: 13px;
+  color: var(--text-3);
+  text-align: center;
+  margin-top: -12px;
+}
+.hero-input-outer {
+  width: 100%;
+  max-width: 560px;
+  position: relative;
+}
+.hero-ticker-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color .2s, box-shadow .2s;
+  box-shadow: 0 2px 16px rgba(0,0,0,.25);
+}
+.hero-ticker-wrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79,142,247,.15);
+}
+#tickerInput {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  padding: 14px 14px 14px 6px;
+  color: var(--text-1);
+  font-size: 17px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  min-width: 0;
+}
+#tickerInput::placeholder { color: var(--text-3); font-weight: 400; text-transform: none; font-size: 14px; }
+.btn-hero-analyze {
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 14px 22px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: background .15s;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.btn-hero-analyze:hover { background: #3a7de8; }
+.btn-hero-analyze:disabled { background: var(--bg-hover); color: var(--text-3); cursor: not-allowed; }
+.hero-quick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  max-width: 560px;
+}
+.hero-quick-chip {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all .15s;
+}
+.hero-quick-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+/* ─── Example Cards ──────────────────────── */
+.examples-section {
+  width: 100%;
+  max-width: 720px;
+  padding: 0 32px 40px;
+  margin: 0 auto;
+}
+.examples-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 10px;
+  padding-left: 2px;
+}
+.example-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: border-color .15s;
+}
+.example-card:hover { border-color: var(--border); }
+.example-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+}
+.example-card-header:hover { background: var(--bg-hover); }
+.ex-ticker {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-1);
+  min-width: 52px;
+}
+.ex-name { font-size: 12px; color: var(--text-3); }
+.ex-score {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+}
+.ex-score.p5 { color: var(--green); }
+.ex-score.p4 { color: var(--accent); }
+.ex-score.p3 { color: var(--text-2); }
+.ex-toggle {
+  font-size: 14px;
+  color: var(--text-3);
+  transition: transform .2s;
+  line-height: 1;
+}
+.ex-toggle.open { transform: rotate(0deg); }
+.ex-toggle.closed { transform: rotate(-90deg); }
+.example-card-body {
+  overflow: hidden;
+  transition: max-height .3s ease;
+  border-top: 1px solid var(--border-dim);
+}
+.example-card-body-inner {
+  padding: 16px 20px 20px;
+}
+.btn-analyze-this {
+  background: none;
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: all .15s;
+  margin-left: auto;
+}
+.btn-analyze-this:hover { background: var(--accent-dim); }
+
+/* ─── Header compact search ──────────────── */
+.header-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: visible;
+  transition: border-color .2s;
+  margin-right: 4px;
+}
+.header-search-wrap:focus-within { border-color: var(--accent); }
+#headerTickerInput {
+  background: none;
+  border: none;
+  outline: none;
+  padding: 5px 10px;
+  color: var(--text-1);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  width: 120px;
+}
+#headerTickerInput::placeholder { color: var(--text-3); font-weight: 400; text-transform: none; font-size: 12px; }
+.btn-header-go {
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+}
+.btn-header-go:hover { background: #3a7de8; }
+.header-ac-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  min-width: 220px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  z-index: 100;
+  overflow: hidden;
+  display: none;
+}
+.header-ac-dropdown.open { display: block; }
+
+/* ─── Compact Mode ───────────────────────────── */
+.mode-compact { margin: 12px 0 8px; flex-shrink: 0; }
+.mode-compact-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.mode-chips { display: flex; gap: 4px; }
+.mode-chip {
+  flex: 1;
+  text-align: center;
+  padding: 5px 4px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-3);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all .15s;
+  background: var(--bg-card);
+  font-family: var(--font-sans);
+}
+.mode-chip.active { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
+.mode-chip:hover:not(.active) { color: var(--text-2); }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="logo"><span>Serenity</span> Research</div>
+  <div class="header-sub">产业链卡点分析 · 美股 &amp; 加密货币</div>
+  <div class="header-right">
+    <div id="apiStatusBadge" class="api-status none">连接中...</div>
+    <button class="btn-icon" onclick="openSettings()">设置</button>
+  </div>
+</header>
+
+<!-- Layout -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-inner" style="display:flex;flex-direction:column;overflow:hidden;height:100%">
+
+      <!-- Sector Tabs -->
+      <div class="sector-tabs">
+        <div class="sector-tab active" data-tab="ai" onclick="switchSectorTab('ai')">AI赛道</div>
+        <div class="sector-tab" data-tab="gainers" onclick="switchSectorTab('gainers')">涨幅榜</div>
+        <div class="sector-tab" data-tab="crypto" onclick="switchSectorTab('crypto')">链上热</div>
+        <div class="sector-tab" data-tab="watchlist" onclick="switchSectorTab('watchlist')">自选</div>
+      </div>
+
+      <!-- Sector Panel -->
+      <div class="sector-panel" id="sectorPanel"></div>
+
+      <!-- Mode (compact) -->
+      <div class="mode-compact">
+        <div class="mode-compact-label">分析深度</div>
+        <div class="mode-chips">
+          <div class="mode-chip" data-mode="quick" onclick="setMode('quick')">Quick</div>
+          <div class="mode-chip active" data-mode="deep" onclick="setMode('deep')">Deep</div>
+          <div class="mode-chip" data-mode="challenge" onclick="setMode('challenge')">Challenge</div>
+        </div>
+      </div>
+
+      <!-- History -->
+      <div class="history-group" id="historyGroup" style="display:none;flex-shrink:0">
+        <div class="sidebar-section-label">最近分析</div>
+        <div class="history-chips" id="historyChips"></div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="output-header" id="outputHeader" style="display:none">
+      <span class="output-ticker" id="outputTicker"></span>
+      <span class="output-name" id="outputName"></span>
+      <div class="output-actions">
+        <!-- Compact search for switching tickers while viewing results -->
+        <div class="header-search-wrap">
+          <span id="headerMarketBadge" class="ticker-badge unknown" style="margin-left:6px;font-size:9px">--</span>
+          <input id="headerTickerInput" type="text" placeholder="换一个标的…" autocomplete="off" spellcheck="false" />
+          <button class="btn-header-go" onclick="startHeaderSearch()">→</button>
+          <div class="header-ac-dropdown" id="headerAcDropdown"></div>
+        </div>
+        <button class="btn-icon" onclick="copyAnalysis()">复制</button>
+        <button class="btn-icon" onclick="clearOutput()">清除</button>
+      </div>
+    </div>
+
+    <div id="outputArea">
+      <!-- Hero + Examples (empty state) -->
+      <div id="emptyState" style="overflow-y:auto;height:100%;display:flex;flex-direction:column">
+
+        <!-- Hero search -->
+        <div class="hero-wrap">
+          <div class="hero-brand"><span>Serenity</span> Research</div>
+          <p class="hero-sub">产业链卡点分析 · 找出市场没看清楚的位置</p>
+
+          <div class="hero-input-outer">
+            <div class="hero-ticker-wrap">
+              <span id="marketBadge" class="ticker-badge unknown" style="margin-left:12px">--</span>
+              <input id="tickerInput" type="text" placeholder="输入或搜索标的（NVDA / BTC / TSLA…）" autocomplete="off" autocorrect="off" spellcheck="false" />
+              <button class="btn-hero-analyze" id="analyzeBtn" onclick="startAnalysis()">开始分析 →</button>
+            </div>
+            <div class="autocomplete-dropdown" id="acDropdown"></div>
+          </div>
+
+          <div class="hero-quick-chips">
+            <span class="hero-quick-chip" onclick="selectAndAnalyze('NVDA')">NVDA</span>
+            <span class="hero-quick-chip" onclick="selectAndAnalyze('BTC')">BTC</span>
+            <span class="hero-quick-chip" onclick="selectAndAnalyze('TSLA')">TSLA</span>
+            <span class="hero-quick-chip" onclick="selectAndAnalyze('SOL')">SOL</span>
+            <span class="hero-quick-chip" onclick="selectAndAnalyze('AMD')">AMD</span>
+            <span class="hero-quick-chip" onclick="selectAndAnalyze('ETH')">ETH</span>
+            <span class="hero-quick-chip" onclick="selectAndAnalyze('PLTR')">PLTR</span>
+            <span class="hero-quick-chip" onclick="selectAndAnalyze('SMCI')">SMCI</span>
+          </div>
+        </div>
+
+        <!-- Example analyses -->
+        <div class="examples-section">
+          <div class="examples-label">分析示例 · 点击标的开始真实分析</div>
+
+          <!-- NVDA (expanded) -->
+          <div class="example-card" id="ex-card-nvda">
+            <div class="example-card-header" onclick="toggleExample('nvda')">
+              <span class="ex-ticker">NVDA</span>
+              <span class="ex-name">NVIDIA Corporation</span>
+              <span class="chain-badge controls" style="font-size:11px;padding:2px 8px">产业链卡点</span>
+              <span class="ex-score p4">4/5</span>
+              <button class="btn-analyze-this" onclick="event.stopPropagation();selectAndAnalyze('NVDA')">分析此标的 →</button>
+              <span class="ex-toggle open" id="ex-toggle-nvda">▾</span>
+            </div>
+            <div class="example-card-body" id="ex-body-nvda">
+              <div class="example-card-body-inner">
+                <div class="summary-card" style="margin-bottom:16px">
+                  <div class="summary-top">
+                    <div>
+                      <div class="priority-score p4">4<span style="font-size:16px;color:var(--text-3);font-weight:400">/5</span></div>
+                      <div class="priority-dots">
+                        <div class="priority-dot filled p4"></div><div class="priority-dot filled p4"></div>
+                        <div class="priority-dot filled p4"></div><div class="priority-dot filled p4"></div>
+                        <div class="priority-dot"></div>
+                      </div>
+                    </div>
+                    <div class="summary-meta">
+                      <div class="summary-verdict">CoWoS 先进封装与 HBM 供应是真实约束，需求端持续超预期</div>
+                      <div class="summary-missing">市场低估了 CoWoS 扩产瓶颈对 2025H2 出货节奏的影响</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+                      <span class="chain-badge controls">产业链卡点</span>
+                      <div class="evidence-bar"><div class="evidence-dots">
+                        <div class="evidence-dot filled strong"></div><div class="evidence-dot filled strong"></div>
+                        <div class="evidence-dot filled strong"></div><div class="evidence-dot filled strong"></div>
+                        <div class="evidence-dot"></div>
+                      </div><span class="evidence-label strong">STRONG</span></div>
+                    </div>
+                  </div>
+                  <div class="summary-grid">
+                    <div><div class="summary-section-label">产业链卡点</div>
+                      <div class="scarce-chips"><span class="scarce-chip">CoWoS封装</span><span class="scarce-chip">HBM3e</span><span class="scarce-chip">TSMC N3</span></div>
+                    </div>
+                    <div><div class="summary-section-label">核心风险</div>
+                      <div class="risk-items">
+                        <div class="risk-item"><div class="risk-dot"></div>对华 AI 芯片出口管制升级</div>
+                        <div class="risk-item"><div class="risk-dot"></div>AMD MI400 竞争压力</div>
+                        <div class="risk-item"><div class="risk-dot"></div>CSP 自研芯片加速替代</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="md-output" style="font-size:13px">
+                  <h2>稀缺层定位</h2>
+                  <blockquote>★ 焦点：CoWoS 先进封装产能（非 GPU Die 本身）</blockquote>
+                  <p>TSMC CoWoS 月产能约 30,000 片，H100/H200 每颗消耗 3–4 个 Reticle；扩产周期 18–24 个月，不可快速响应。SK Hynix HBM3e 同步吃紧，两端同时收窄实际出货量。</p>
+                  <h2>关键证据</h2>
+                  <ul>
+                    <li>✅ TSMC 实际出货比年初 Guidance 低约 15%</li>
+                    <li>✅ 黄仁勋多次表述「供应受限」而非「需求放缓」</li>
+                    <li>✅ Meta / Microsoft 财报披露 GPU 交付延期</li>
+                  </ul>
+                  <h2>行动建议</h2>
+                  <p>跟踪 TSMC CoWoS 季度产量公告与 HBM 价格动向；出口管制新规为关键风险事件窗口。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BTC (collapsed) -->
+          <div class="example-card" id="ex-card-btc">
+            <div class="example-card-header" onclick="toggleExample('btc')">
+              <span class="ex-ticker">BTC</span>
+              <span class="ex-name">Bitcoin</span>
+              <span class="chain-badge supplies" style="font-size:11px;padding:2px 8px">稀缺供给</span>
+              <span class="ex-score p4">4/5</span>
+              <button class="btn-analyze-this" onclick="event.stopPropagation();selectAndAnalyze('BTC')">分析此标的 →</button>
+              <span class="ex-toggle closed" id="ex-toggle-btc">▾</span>
+            </div>
+            <div class="example-card-body" id="ex-body-btc" style="max-height:0;border-top:none">
+              <div class="example-card-body-inner">
+                <div class="summary-card" style="margin-bottom:16px">
+                  <div class="summary-top">
+                    <div>
+                      <div class="priority-score p4">4<span style="font-size:16px;color:var(--text-3);font-weight:400">/5</span></div>
+                      <div class="priority-dots">
+                        <div class="priority-dot filled p4"></div><div class="priority-dot filled p4"></div>
+                        <div class="priority-dot filled p4"></div><div class="priority-dot filled p4"></div>
+                        <div class="priority-dot"></div>
+                      </div>
+                    </div>
+                    <div class="summary-meta">
+                      <div class="summary-verdict">减半周期叠加 ETF 机构入场，供给约束在协议层硬编码</div>
+                      <div class="summary-missing">市场低估了 ETF 持续净流入对流通供给的边际消耗速度</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+                      <span class="chain-badge supplies">稀缺供给</span>
+                      <div class="evidence-bar"><div class="evidence-dots">
+                        <div class="evidence-dot filled p4"></div><div class="evidence-dot filled p4"></div>
+                        <div class="evidence-dot filled p4"></div><div class="evidence-dot"></div><div class="evidence-dot"></div>
+                      </div><span class="evidence-label medium">MEDIUM</span></div>
+                    </div>
+                  </div>
+                  <div class="summary-grid">
+                    <div><div class="summary-section-label">稀缺层</div>
+                      <div class="scarce-chips"><span class="scarce-chip">减半供给压缩</span><span class="scarce-chip">ETF 托管锁仓</span></div>
+                    </div>
+                    <div><div class="summary-section-label">核心风险</div>
+                      <div class="risk-items">
+                        <div class="risk-item"><div class="risk-dot"></div>宏观流动性收紧</div>
+                        <div class="risk-item"><div class="risk-dot"></div>监管政策黑天鹅</div>
+                        <div class="risk-item"><div class="risk-dot"></div>矿工抛压集中释放</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="md-output" style="font-size:13px">
+                  <h2>稀缺层定位</h2>
+                  <blockquote>★ 焦点：协议层减半 + ETF 净买入造成的流通量收缩</blockquote>
+                  <p>2024 年 4 月第四次减半后，矿工日发行量从 900 BTC 降至 450 BTC；同期 BlackRock IBIT 等现货 ETF 日均净流入约 1,500–3,000 BTC，需求侧吸收速度持续超过新增供给。</p>
+                  <h2>行动建议</h2>
+                  <p>跟踪 ETF 净流入周数据（CoinGlass）与矿工钱包余额变化；Fed 降息路径是宏观催化剂。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TSLA (collapsed) -->
+          <div class="example-card" id="ex-card-tsla">
+            <div class="example-card-header" onclick="toggleExample('tsla')">
+              <span class="ex-ticker">TSLA</span>
+              <span class="ex-name">Tesla</span>
+              <span class="chain-badge weak" style="font-size:11px;padding:2px 8px">竞争弱化</span>
+              <span class="ex-score p3">3/5</span>
+              <button class="btn-analyze-this" onclick="event.stopPropagation();selectAndAnalyze('TSLA')">分析此标的 →</button>
+              <span class="ex-toggle closed" id="ex-toggle-tsla">▾</span>
+            </div>
+            <div class="example-card-body" id="ex-body-tsla" style="max-height:0;border-top:none">
+              <div class="example-card-body-inner">
+                <div class="summary-card" style="margin-bottom:16px">
+                  <div class="summary-top">
+                    <div>
+                      <div class="priority-score p3">3<span style="font-size:16px;color:var(--text-3);font-weight:400">/5</span></div>
+                      <div class="priority-dots">
+                        <div class="priority-dot filled p3"></div><div class="priority-dot filled p3"></div>
+                        <div class="priority-dot filled p3"></div><div class="priority-dot"></div><div class="priority-dot"></div>
+                      </div>
+                    </div>
+                    <div class="summary-meta">
+                      <div class="summary-verdict">BYD 价格战侵蚀毛利，Robotaxi/FSD 叙事尚未兑现</div>
+                      <div class="summary-missing">市场在软件 AI 溢价与实体汽车竞争恶化之间定价混乱</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+                      <span class="chain-badge weak">竞争弱化</span>
+                      <div class="evidence-bar"><div class="evidence-dots">
+                        <div class="evidence-dot filled p3"></div><div class="evidence-dot filled p3"></div>
+                        <div class="evidence-dot filled p3"></div><div class="evidence-dot"></div><div class="evidence-dot"></div>
+                      </div><span class="evidence-label medium">MEDIUM</span></div>
+                    </div>
+                  </div>
+                  <div class="summary-grid">
+                    <div><div class="summary-section-label">关注点</div>
+                      <div class="scarce-chips"><span class="scarce-chip">FSD 商业化</span><span class="scarce-chip">能源储能</span></div>
+                    </div>
+                    <div><div class="summary-section-label">核心风险</div>
+                      <div class="risk-items">
+                        <div class="risk-item"><div class="risk-dot"></div>中国市占率持续下滑</div>
+                        <div class="risk-item"><div class="risk-dot"></div>毛利率价格战压缩</div>
+                        <div class="risk-item"><div class="risk-dot"></div>Robotaxi 监管壁垒</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="md-output" style="font-size:13px">
+                  <h2>核心争议</h2>
+                  <blockquote>特斯拉是汽车公司还是 AI/软件平台？估值体系完全不同</blockquote>
+                  <p>真正的卡点不在整车制造（竞争激烈），而在 FSD 数据飞轮——若实现 L4 商业化，Unit Economics 将根本性重构。但时间表高度不确定。</p>
+                  <h2>行动建议</h2>
+                  <p>核心指标：FSD 每英里干预率、Cybercab 交付节点、中国交付量 vs BYD 同期数据。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SOL (collapsed) -->
+          <div class="example-card" id="ex-card-sol">
+            <div class="example-card-header" onclick="toggleExample('sol')">
+              <span class="ex-ticker">SOL</span>
+              <span class="ex-name">Solana</span>
+              <span class="chain-badge controls" style="font-size:11px;padding:2px 8px">产业链卡点</span>
+              <span class="ex-score p4">4/5</span>
+              <button class="btn-analyze-this" onclick="event.stopPropagation();selectAndAnalyze('SOL')">分析此标的 →</button>
+              <span class="ex-toggle closed" id="ex-toggle-sol">▾</span>
+            </div>
+            <div class="example-card-body" id="ex-body-sol" style="max-height:0;border-top:none">
+              <div class="example-card-body-inner">
+                <div class="summary-card" style="margin-bottom:16px">
+                  <div class="summary-top">
+                    <div>
+                      <div class="priority-score p4">4<span style="font-size:16px;color:var(--text-3);font-weight:400">/5</span></div>
+                      <div class="priority-dots">
+                        <div class="priority-dot filled p4"></div><div class="priority-dot filled p4"></div>
+                        <div class="priority-dot filled p4"></div><div class="priority-dot filled p4"></div>
+                        <div class="priority-dot"></div>
+                      </div>
+                    </div>
+                    <div class="summary-meta">
+                      <div class="summary-verdict">Meme 流量 + DePIN 双引擎，验证者质押锁仓压缩流通</div>
+                      <div class="summary-missing">市场高估了以太坊 L2 对 Solana 的实质替代威胁</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+                      <span class="chain-badge controls">产业链卡点</span>
+                      <div class="evidence-bar"><div class="evidence-dots">
+                        <div class="evidence-dot filled p4"></div><div class="evidence-dot filled p4"></div>
+                        <div class="evidence-dot filled p4"></div><div class="evidence-dot filled p4"></div>
+                        <div class="evidence-dot"></div>
+                      </div><span class="evidence-label strong">STRONG</span></div>
+                    </div>
+                  </div>
+                  <div class="summary-grid">
+                    <div><div class="summary-section-label">产业链卡点</div>
+                      <div class="scarce-chips"><span class="scarce-chip">验证者质押锁仓</span><span class="scarce-chip">Firedancer升级</span></div>
+                    </div>
+                    <div><div class="summary-section-label">核心风险</div>
+                      <div class="risk-items">
+                        <div class="risk-item"><div class="risk-dot"></div>网络宕机历史记录</div>
+                        <div class="risk-item"><div class="risk-dot"></div>Meme 周期退潮</div>
+                        <div class="risk-item"><div class="risk-dot"></div>ETF 申请进展不确定</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="md-output" style="font-size:13px">
+                  <h2>稀缺层定位</h2>
+                  <blockquote>★ 焦点：高吞吐量低费用生态位的护城河（Meme / DePIN 双飞轮）</blockquote>
+                  <p>Solana 在 Meme Coin（pump.fun）和 DePIN 协议中形成网络效应壁垒；Firedancer 上线后吞吐量预计 10x，进一步巩固生态位。约 65% SOL 处于质押状态，流通供给长期压缩。</p>
+                  <h2>行动建议</h2>
+                  <p>跟踪 DEX 交易量份额（Solana vs ETH L2）、Firedancer 测试网进展、现货 ETF 申请时间线。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /examples-section -->
+      </div><!-- /emptyState -->
+
+      <!-- analysis output -->
+      <div id="analysisOutput" style="display:none">
+        <div id="loadingBar" class="loading-bar" style="display:none">
+          <div class="loading-bar-inner"></div>
+        </div>
+        <div id="loadingLabel" class="loading-label" style="display:none">
+          <div class="loading-dot"></div>
+          <span id="loadingText">正在扫描产业链...</span>
+        </div>
+        <div id="summaryCard" style="display:none"></div>
+        <div class="md-output" id="mdOutput"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <div class="modal-title">设置</div>
+    <div class="modal-sub">由管理员配置，普通用户无需修改</div>
+
+    <div class="field-label">代理服务地址</div>
+    <input class="field-input" id="proxyUrlInput" type="text" placeholder="https://serenity-proxy.yourname.workers.dev" />
+    <div class="field-note">部署 Cloudflare Worker 后填入，所有用户共用此地址。</div>
+
+    <div class="field-label">访问码（可选）</div>
+    <input class="field-input" id="accessCodeInput" type="password" placeholder="如未设置则留空" />
+    <div class="field-note" style="margin-top:-12px;margin-bottom:16px">Worker 设置了 ACCESS_CODE 环境变量时才需要填写。</div>
+
+    <div class="field-label">模型</div>
+    <select class="field-input" id="modelSelect">
+      <option value="deepseek-chat">deepseek-chat（V3，快速，推荐）</option>
+      <option value="deepseek-reasoner">deepseek-reasoner（R1，深度推理）</option>
+    </select>
+
+    <div class="modal-row">
+      <button class="btn-primary" onclick="saveSettings()">保存</button>
+      <button class="btn-secondary" onclick="closeSettings()">取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Local ticker database ───────────────────────────────────────────────────
+const TICKER_DB = [
+  {t:'NVDA',n:'NVIDIA',m:'US'},{t:'AAPL',n:'Apple',m:'US'},{t:'MSFT',n:'Microsoft',m:'US'},
+  {t:'GOOGL',n:'Alphabet',m:'US'},{t:'AMZN',n:'Amazon',m:'US'},{t:'META',n:'Meta Platforms',m:'US'},
+  {t:'TSLA',n:'Tesla',m:'US'},{t:'AVGO',n:'Broadcom',m:'US'},{t:'TSM',n:'TSMC',m:'US'},
+  {t:'AMD',n:'Advanced Micro Devices',m:'US'},{t:'INTC',n:'Intel',m:'US'},{t:'QCOM',n:'Qualcomm',m:'US'},
+  {t:'ASML',n:'ASML Holding',m:'US'},{t:'AMAT',n:'Applied Materials',m:'US'},
+  {t:'KLAC',n:'KLA Corp',m:'US'},{t:'LRCX',n:'Lam Research',m:'US'},
+  {t:'MU',n:'Micron Technology',m:'US'},{t:'MRVL',n:'Marvell Technology',m:'US'},
+  {t:'ARM',n:'Arm Holdings',m:'US'},{t:'SMCI',n:'Super Micro Computer',m:'US'},
+  {t:'PLTR',n:'Palantir',m:'US'},{t:'SNOW',n:'Snowflake',m:'US'},{t:'DDOG',n:'Datadog',m:'US'},
+  {t:'CRM',n:'Salesforce',m:'US'},{t:'NOW',n:'ServiceNow',m:'US'},{t:'ORCL',n:'Oracle',m:'US'},
+  {t:'IBM',n:'IBM',m:'US'},{t:'DELL',n:'Dell Technologies',m:'US'},{t:'HPE',n:'HP Enterprise',m:'US'},
+  {t:'MSTR',n:'MicroStrategy',m:'US'},{t:'COIN',n:'Coinbase',m:'US'},{t:'HOOD',n:'Robinhood',m:'US'},
+  {t:'MARA',n:'Marathon Digital',m:'US'},{t:'CLSK',n:'CleanSpark',m:'US'},
+  {t:'RIVN',n:'Rivian',m:'US'},{t:'NIO',n:'NIO',m:'US'},{t:'LI',n:'Li Auto',m:'US'},
+  {t:'XPEV',n:'XPeng',m:'US'},{t:'ENPH',n:'Enphase Energy',m:'US'},{t:'FSLR',n:'First Solar',m:'US'},
+  {t:'RKLB',n:'Rocket Lab',m:'US'},{t:'LMT',n:'Lockheed Martin',m:'US'},
+  {t:'LLY',n:'Eli Lilly',m:'US'},{t:'NVO',n:'Novo Nordisk',m:'US'},
+  {t:'MRNA',n:'Moderna',m:'US'},{t:'BNTX',n:'BioNTech',m:'US'},
+  {t:'NFLX',n:'Netflix',m:'US'},{t:'DIS',n:'Walt Disney',m:'US'},{t:'SPOT',n:'Spotify',m:'US'},
+  {t:'UBER',n:'Uber',m:'US'},{t:'ABNB',n:'Airbnb',m:'US'},{t:'IONQ',n:'IonQ',m:'US'},
+  {t:'JPM',n:'JPMorgan Chase',m:'US'},{t:'GS',n:'Goldman Sachs',m:'US'},
+  {t:'V',n:'Visa',m:'US'},{t:'MA',n:'Mastercard',m:'US'},
+  {t:'BTC',n:'Bitcoin',m:'Crypto'},{t:'ETH',n:'Ethereum',m:'Crypto'},{t:'SOL',n:'Solana',m:'Crypto'},
+  {t:'BNB',n:'BNB',m:'Crypto'},{t:'XRP',n:'XRP',m:'Crypto'},{t:'ADA',n:'Cardano',m:'Crypto'},
+  {t:'AVAX',n:'Avalanche',m:'Crypto'},{t:'DOT',n:'Polkadot',m:'Crypto'},
+  {t:'LINK',n:'Chainlink',m:'Crypto'},{t:'DOGE',n:'Dogecoin',m:'Crypto'},
+  {t:'UNI',n:'Uniswap',m:'Crypto'},{t:'AAVE',n:'Aave',m:'Crypto'},
+  {t:'ARB',n:'Arbitrum',m:'Crypto'},{t:'OP',n:'Optimism',m:'Crypto'},
+  {t:'APT',n:'Aptos',m:'Crypto'},{t:'SUI',n:'Sui',m:'Crypto'},
+  {t:'INJ',n:'Injective',m:'Crypto'},{t:'TIA',n:'Celestia',m:'Crypto'},
+  {t:'JUP',n:'Jupiter',m:'Crypto'},{t:'PEPE',n:'Pepe',m:'Crypto'},
+  {t:'LTC',n:'Litecoin',m:'Crypto'},{t:'NEAR',n:'NEAR Protocol',m:'Crypto'},
+  {t:'FIL',n:'Filecoin',m:'Crypto'},{t:'RNDR',n:'Render',m:'Crypto'},
+];
+
+function searchLocal(q) {
+  if (!q || q.length < 1) return [];
+  const upper = q.toUpperCase();
+  const lower = q.toLowerCase();
+  return TICKER_DB
+    .filter(d => d.t.startsWith(upper) || d.n.toLowerCase().includes(lower))
+    .sort((a, b) => (a.t.startsWith(upper) ? 0 : 1) - (b.t.startsWith(upper) ? 0 : 1))
+    .slice(0, 8);
+}
+
+// ─── Config ──────────────────────────────────────────────────────────────────
+const PROXY_URL = 'https://serenity-research-proxy.reese-job-0510.workers.dev';
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let currentMode = 'deep';
+let currentTicker = '';
+let abortController = null;
+let analysisText = '';
+let history = JSON.parse(localStorage.getItem('sr_history') || '[]');
+
+// ─── Crypto detection ─────────────────────────────────────────────────────────
+const CRYPTO_TICKERS = new Set([
+  'BTC','ETH','SOL','BNB','XRP','ADA','AVAX','DOT','LINK','MATIC','DOGE','LTC',
+  'ATOM','UNI','AAVE','CRV','MKR','SNX','COMP','YFI','SUSHI','1INCH','ZRX',
+  'BAT','ENJ','MANA','SAND','AXS','SLP','GALA','IMX','LRC','NEAR','FTM','ONE',
+  'ALGO','HBAR','EGLD','THETA','VET','XLM','TRX','EOS','ZEC','DASH','XMR',
+  'APT','SUI','SEI','ARB','OP','BASE','INJ','TIA','PYTH','JTO','WEN','BONK',
+  'PEPE','WIF','FLOKI','SHIB','LUNA','UST','FIL','GRT','OCEAN','NU','STORJ',
+  'FLOW','ROSE','ICP','HNT','RNDR','FET','AGIX','OCEAN','NMR','RAY','ORCA',
+  'JUP','DRIFT','JITO',
+]);
+
+function detectMarket(ticker) {
+  const t = ticker.toUpperCase();
+  if (!t) return 'unknown';
+  if (CRYPTO_TICKERS.has(t)) return 'crypto';
+  // Common US patterns
+  if (/^[A-Z]{1,5}$/.test(t) && !CRYPTO_TICKERS.has(t)) return 'us';
+  return 'unknown';
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+function init() {
+  loadSettings();
+  renderHistory();
+  renderSectorPanel();
+  checkProxy();
+  initExamples();
+
+  const input = document.getElementById('tickerInput');
+
+  input.addEventListener('input', () => {
+    const v = input.value.trim();
+    const upper = v.toUpperCase();
+    const market = detectMarket(upper);
+    const badge = document.getElementById('marketBadge');
+    if (market === 'us') { badge.textContent = 'US'; badge.className = 'ticker-badge us'; }
+    else if (market === 'crypto') { badge.textContent = 'CRYPTO'; badge.className = 'ticker-badge crypto'; }
+    else { badge.textContent = '--'; badge.className = 'ticker-badge unknown'; }
+    showAutocomplete(v);
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { hideAutocomplete(); startAnalysis(); }
+    if (e.key === 'Escape') hideAutocomplete();
+  });
+
+  // Header compact search
+  const headerInput = document.getElementById('headerTickerInput');
+  headerInput.addEventListener('input', () => {
+    const v = headerInput.value.trim();
+    const upper = v.toUpperCase();
+    const market = detectMarket(upper);
+    const badge = document.getElementById('headerMarketBadge');
+    if (market === 'us') { badge.textContent = 'US'; badge.className = 'ticker-badge us'; }
+    else if (market === 'crypto') { badge.textContent = '⬡'; badge.className = 'ticker-badge crypto'; }
+    else { badge.textContent = '--'; badge.className = 'ticker-badge unknown'; }
+    showHeaderAutocomplete(v);
+  });
+  headerInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') startHeaderSearch();
+    if (e.key === 'Escape') hideHeaderAutocomplete();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.ticker-outer')) hideAutocomplete();
+    if (!e.target.closest('.header-search-wrap')) hideHeaderAutocomplete();
+  });
+}
+
+// ─── Autocomplete ─────────────────────────────────────────────────────────────
+function showAutocomplete(q) {
+  const dropdown = document.getElementById('acDropdown');
+  const results = searchLocal(q);
+  if (!results.length || !q) { hideAutocomplete(); return; }
+  dropdown.innerHTML = results.map(d => `
+    <div class="ac-item" onclick="selectTicker('${d.t}','${d.m}')">
+      <span class="ac-ticker">${d.t}</span>
+      <span class="ac-name">${d.n}</span>
+      <span class="ac-badge ${d.m.toLowerCase()}">${d.m}</span>
+    </div>`).join('');
+  dropdown.classList.add('open');
+}
+
+function hideAutocomplete() {
+  document.getElementById('acDropdown').classList.remove('open');
+}
+
+function selectTicker(ticker, market) {
+  const input = document.getElementById('tickerInput');
+  input.value = ticker;
+  const badge = document.getElementById('marketBadge');
+  if (market === 'US') { badge.textContent = 'US'; badge.className = 'ticker-badge us'; }
+  else { badge.textContent = 'CRYPTO'; badge.className = 'ticker-badge crypto'; }
+  hideAutocomplete();
+  startAnalysis();
+}
+
+async function checkProxy() {
+  const badge = document.getElementById('apiStatusBadge');
+  badge.textContent = '服务就绪';
+  badge.className = 'api-status ok';
+}
+
+function getProxyUrl() { return null; }
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+function loadSettings() {
+  const proxyUrl = localStorage.getItem('sr_proxy_url') || DEFAULT_PROXY_URL;
+  const accessCode = localStorage.getItem('sr_access_code') || '';
+  const model = localStorage.getItem('sr_model') || 'claude-3-5-haiku-20241022';
+  document.getElementById('proxyUrlInput').value = proxyUrl;
+  document.getElementById('accessCodeInput').value = accessCode;
+  document.getElementById('modelSelect').value = model;
+}
+function saveSettings() {
+  const proxyUrl = document.getElementById('proxyUrlInput').value.trim();
+  const accessCode = document.getElementById('accessCodeInput').value.trim();
+  const model = document.getElementById('modelSelect').value;
+  localStorage.setItem('sr_proxy_url', proxyUrl);
+  localStorage.setItem('sr_access_code', accessCode);
+  localStorage.setItem('sr_model', model);
+  closeSettings();
+  checkProxy();
+}
+function openSettings() { document.getElementById('settingsModal').classList.add('open'); }
+function closeSettings() { document.getElementById('settingsModal').classList.remove('open'); }
+document.getElementById('settingsModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeSettings();
+});
+
+// ─── Mode ─────────────────────────────────────────────────────────────────────
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-option').forEach(el => {
+    el.classList.toggle('active', el.dataset.mode === mode);
+  });
+  document.querySelectorAll('.mode-chip').forEach(el => {
+    el.classList.toggle('active', el.dataset.mode === mode);
+  });
+}
+
+// ─── History ─────────────────────────────────────────────────────────────────
+function addToHistory(ticker) {
+  history = [ticker, ...history.filter(t => t !== ticker)].slice(0, 8);
+  localStorage.setItem('sr_history', JSON.stringify(history));
+  renderHistory();
+  if (currentSectorTab === 'watchlist') renderSectorPanel();
+}
+function renderHistory() {
+  const group = document.getElementById('historyGroup');
+  const chips = document.getElementById('historyChips');
+  if (history.length === 0) { group.style.display = 'none'; return; }
+  group.style.display = '';
+  chips.innerHTML = history.map(t =>
+    `<div class="history-chip" onclick="quickFill('${t}')">${t}</div>`
+  ).join('');
+}
+function quickFill(ticker) {
+  document.getElementById('tickerInput').value = ticker;
+  document.getElementById('tickerInput').dispatchEvent(new Event('input'));
+  startAnalysis();
+}
+
+// ─── System prompt ────────────────────────────────────────────────────────────
+function buildSystemPrompt() {
+  return `你是一位基于 Serenity 方法论的投资研究伙伴。你的核心能力是：从市场叙事出发，穿透到真实的产业链系统，找到最难扩产、最稀缺的那一层，再看是哪家公司最靠近或控制这一层。
+
+## 分析工作流（必须完整执行）
+
+1. **系统性变化**：找出驱动需求的技术或经济变化。哪个旧设计被压力迫使改变？哪个物理约束最重要？
+2. **价值链映射**：从下游到上游逐层列举：下游需求 → 系统集成 → 模组/子系统 → 芯片/器件 → 工艺和封装 → 设备和测试 → 材料和耗材 → 物理基础设施
+3. **找到稀缺层**：供应商数量少、认证周期长、扩产困难、核心技术壁垒、材料纯度、产能预订优先级。优先关注不明显的上游层。
+4. **建立公司宇宙**：把相关公司按产业链位置分类：控制稀缺层、供应稀缺层、受益于趋势、控制力弱、纯粹是故事。
+5. **收集和评级证据**：优先用一级来源（财报、交易所公告、公司公告、专利）。给每条证据打强度：strong / medium / weak。
+6. **优先排序**：按需求压力、距离稀缺层的远近、供应商集中度、扩产难度、证据质量、估值空间来排序。
+7. **失败条件**：明确指出什么情况会证明这个判断是错的。
+8. **下一步验证**：具体的核查路径：财报条目、指标、客户交叉验证、产能证据、近期催化剂。
+
+## 输出格式（严格遵守 Markdown 结构）
+
+## 核心判断
+[一两句话：产业链位置 + 研究优先级 + 最关键的洞察]
+
+## 系统性变化
+[驱动需求的技术或经济变化，2-4 句]
+
+## 产业链层级
+[Markdown 表格：| 层级 | 代表公司/资产 | 稀缺性 |]
+标注稀缺层
+
+## 产业链位置
+[这家公司/资产控制的是哪一层？供应哪一层？还是只是受益于主题？3-5 句]
+
+## 稀缺层分析
+[为什么这一层难以快速扩产？技术、周期、材料、认证、资本密度哪个是真实约束？]
+
+## 证据
+[每条证据格式：**[strong/medium/weak]** 具体事实 — 来源]
+至少 3 条，优先一级来源
+
+## 市场可能没看清的地方
+[市场定价可能错了什么？这是真正有价值的洞察，不是泛泛而谈]
+
+## 反方理由
+[3-4 条证伪条件，每条是具体的可验证场景]
+
+## 接下来可能让市场重新定价的事情
+[编号列表，每条是具体的核查动作：去哪里找什么数据]
+
+## 优先研究排序
+研究优先级：X/5
+理由：[简短说明]
+
+---
+*注：以上分析基于公开信息和研究框架，不构成投资建议。所有判断和交易决策由用户自行负责。*
+
+## 结构化摘要（必须输出）
+在所有分析文本结束后，必须紧接着输出如下 JSON 块，供页面可视化渲染，不可省略：
+
+<SERENITY_JSON>
+{"priority":数字1到5,"chain_control":"controls或supplies或benefits或weak或story","scarce_layers":["稀缺层1","稀缺层2"],"evidence_strength":"strong或medium或weak","top_risks":["风险1","风险2","风险3"],"verdict":"核心判断一句话20字内","what_market_missing":"市场没看清的一句话30字内"}
+</SERENITY_JSON>
+
+## 沟通风格
+- 直接给判断，不要引言废话
+- 中文回答（除非用户用英文提问）
+- 对热门故事保持怀疑
+- 证据不足时明确说明缺什么
+- 永远不要给出买卖指令，研究结论归你，决策归用户`;
+}
+
+function buildUserMessage(ticker, mode) {
+  const market = detectMarket(ticker);
+  const marketLabel = market === 'crypto' ? '加密货币' : market === 'us' ? '美股' : '待确认市场';
+
+  const modeInstructions = {
+    quick: `进行 Quick Pass 分析：给出核心判断、产业链位置（3 句内）、2 条主要证据、最大风险 2 条，以及优先研究排序。简洁直接，500 字以内。`,
+    deep: `进行完整 Deep Research 分析：严格按照工作流全部 8 步完整输出，不要省略任何章节。要求至少 3 条证据，产业链层级用表格，失败条件要具体可验证。`,
+    challenge: `进行 Challenge Thesis 分析：假设有人已经看多这个标的，你来系统性压力测试这个判断。重点放在：1) 市场共识可能错在哪里；2) 哪些证据被过度解读；3) 真正的风险被低估了吗？4) 什么情况会让这个故事彻底崩塌？既要承认多方的合理部分，也要给出最尖锐的反驳。`,
+  };
+
+  return `分析标的：${ticker.toUpperCase()}
+市场类型：${marketLabel}
+分析模式：${modeInstructions[mode]}`;
+}
+
+// ─── Analysis ─────────────────────────────────────────────────────────────────
+async function startAnalysis() {
+  const input = document.getElementById('tickerInput');
+  const ticker = input.value.trim().toUpperCase();
+  if (!ticker) { input.focus(); return; }
+
+  // Stop any existing analysis
+  if (abortController) { abortController.abort(); }
+  abortController = new AbortController();
+
+  currentTicker = ticker;
+  analysisText = '';
+  addToHistory(ticker);
+
+  // Update UI
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('analysisOutput').style.display = '';
+  document.getElementById('outputHeader').style.display = '';
+  document.getElementById('loadingBar').style.display = '';
+  document.getElementById('loadingLabel').style.display = 'flex';
+  document.getElementById('outputTicker').textContent = ticker;
+  document.getElementById('outputName').textContent = '';
+  document.getElementById('mdOutput').innerHTML = '';
+  document.getElementById('analyzeBtn').disabled = true;
+
+  const loadingPhrases = [
+    '正在映射产业链层级...',
+    '寻找扩产瓶颈...',
+    '检索市场证据...',
+    '评估供应链集中度...',
+    '分析稀缺层约束...',
+    '整合研究结论...',
+  ];
+  let phraseIdx = 0;
+  const phraseInterval = setInterval(() => {
+    phraseIdx = (phraseIdx + 1) % loadingPhrases.length;
+    const el = document.getElementById('loadingText');
+    if (el) el.textContent = loadingPhrases[phraseIdx];
+  }, 2500);
+
+  const model = localStorage.getItem('sr_model') || 'deepseek-chat';
+  const accessCode = localStorage.getItem('sr_access_code') || '';
+  const systemPrompt = buildSystemPrompt();
+  const userMessage = buildUserMessage(ticker, currentMode);
+
+  try {
+    const response = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        stream: true,
+        max_tokens: currentMode === 'quick' ? 1200 : 4096,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage },
+        ],
+      }),
+      signal: abortController.signal,
+    });
+
+    if (!response.ok) {
+      let errMsg = `HTTP ${response.status}`;
+      try {
+        const err = await response.json();
+        if (err.message) errMsg = err.message;
+        else if (err.error?.message) errMsg = err.error.message;
+        if (response.status === 401) errMsg = '访问码错误或未设置，请检查设置。';
+      } catch (_) {}
+      throw new Error(errMsg);
+    }
+
+    // Hide loading after first chunk
+    let firstChunk = true;
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') continue;
+        try {
+          const evt = JSON.parse(data);
+          // DeepSeek/OpenAI SSE format: choices[0].delta.content
+          const text = evt.choices?.[0]?.delta?.content;
+          if (text) {
+            if (firstChunk) {
+              firstChunk = false;
+              clearInterval(phraseInterval);
+              document.getElementById('loadingBar').style.display = 'none';
+              document.getElementById('loadingLabel').style.display = 'none';
+            }
+            analysisText += text;
+            renderMarkdown(analysisText, true);
+          }
+        } catch (_) {}
+      }
+    }
+
+    // Final render: extract summary JSON, render card, clean up markdown
+    const { summary, cleanText } = extractSummary(analysisText);
+    analysisText = cleanText;
+    renderMarkdown(analysisText, false);
+    if (summary) renderSummaryCard(summary);
+
+  } catch (err) {
+    clearInterval(phraseInterval);
+    if (err.name === 'AbortError') return;
+    document.getElementById('loadingBar').style.display = 'none';
+    document.getElementById('loadingLabel').style.display = 'none';
+    document.getElementById('mdOutput').innerHTML = `
+      <div style="background:var(--red-dim);border:1px solid var(--red);border-radius:8px;padding:16px;color:var(--red);">
+        <strong>分析失败</strong><br>
+        <span style="color:var(--text-2);font-size:13px;">${escHtml(err.message)}</span><br>
+        <span style="color:var(--text-3);font-size:12px;margin-top:4px;display:block;">请检查 API Key 是否正确，或账户余额是否充足。</span>
+      </div>`;
+  } finally {
+    clearInterval(phraseInterval);
+    document.getElementById('analyzeBtn').disabled = false;
+  }
+}
+
+// ─── Markdown renderer ────────────────────────────────────────────────────────
+function renderMarkdown(text, showCursor) {
+  const html = mdToHtml(text) + (showCursor ? '<span class="cursor-blink"></span>' : '');
+  document.getElementById('mdOutput').innerHTML = html;
+  // Auto-scroll to bottom
+  const area = document.getElementById('outputArea');
+  area.scrollTop = area.scrollHeight;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function mdToHtml(md) {
+  const lines = md.split('\n');
+  let html = '';
+  let inUl = false, inOl = false, inTable = false, tableRows = [];
+  let inCode = false, codeLines = [];
+
+  function flushList() {
+    if (inUl) { html += '</ul>'; inUl = false; }
+    if (inOl) { html += '</ol>'; inOl = false; }
+  }
+  function flushTable() {
+    if (!inTable) return;
+    inTable = false;
+    if (tableRows.length === 0) return;
+    let t = '<table>';
+    tableRows.forEach((row, i) => {
+      const cells = row.split('|').map(c => c.trim()).filter((_, idx, arr) => idx > 0 && idx < arr.length - 1);
+      if (i === 0) {
+        t += '<tr>' + cells.map(c => `<th>${inlineFormat(c)}</th>`).join('') + '</tr>';
+      } else if (i === 1 && /^[-| :]+$/.test(row)) {
+        // separator row, skip
+      } else {
+        t += '<tr>' + cells.map(c => `<td>${inlineFormat(c)}</td>`).join('') + '</tr>';
+      }
+    });
+    t += '</table>';
+    html += t;
+    tableRows = [];
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Code block
+    if (line.startsWith('```')) {
+      if (!inCode) { inCode = true; codeLines = []; continue; }
+      else { inCode = false; html += `<pre style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:12px;overflow-x:auto;margin:10px 0;font-size:12px;font-family:var(--font-mono);color:var(--text-1)">${escHtml(codeLines.join('\n'))}</pre>`; codeLines = []; continue; }
+    }
+    if (inCode) { codeLines.push(line); continue; }
+
+    // Table
+    if (line.includes('|') && line.trim().startsWith('|')) {
+      flushList();
+      inTable = true;
+      tableRows.push(line);
+      continue;
+    }
+    if (inTable && !line.includes('|')) { flushTable(); }
+
+    // Headings
+    if (line.startsWith('## ')) {
+      flushList(); flushTable();
+      html += `<h2>${inlineFormat(line.slice(3))}</h2>`;
+      continue;
+    }
+    if (line.startsWith('### ')) {
+      flushList(); flushTable();
+      html += `<h3>${inlineFormat(line.slice(4))}</h3>`;
+      continue;
+    }
+
+    // HR
+    if (/^---+$/.test(line.trim())) {
+      flushList(); flushTable();
+      html += '<hr>';
+      continue;
+    }
+
+    // Blockquote
+    if (line.startsWith('> ')) {
+      flushList(); flushTable();
+      html += `<blockquote><p>${inlineFormat(line.slice(2))}</p></blockquote>`;
+      continue;
+    }
+
+    // Ordered list
+    if (/^\d+\.\s/.test(line)) {
+      flushTable();
+      if (inUl) { html += '</ul>'; inUl = false; }
+      if (!inOl) { html += '<ol>'; inOl = true; }
+      html += `<li>${inlineFormat(line.replace(/^\d+\.\s+/, ''))}</li>`;
+      continue;
+    }
+
+    // Unordered list
+    if (/^[-*]\s/.test(line)) {
+      flushTable();
+      if (inOl) { html += '</ol>'; inOl = false; }
+      if (!inUl) { html += '<ul>'; inUl = true; }
+      html += `<li>${inlineFormat(line.slice(2))}</li>`;
+      continue;
+    }
+
+    // Empty line
+    if (line.trim() === '') {
+      flushList(); flushTable();
+      html += '';
+      continue;
+    }
+
+    // Paragraph
+    flushList(); flushTable();
+    html += `<p>${inlineFormat(line)}</p>`;
+  }
+
+  flushList();
+  flushTable();
+  return html;
+}
+
+function inlineFormat(s) {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    // Bold
+    .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/__(.+?)__/g, '<strong>$1</strong>')
+    // Italic
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/_(.+?)_/g, '<em>$1</em>')
+    // Inline code
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    // Strikethrough
+    .replace(/~~(.+?)~~/g, '<del>$1</del>')
+    // Links
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" style="color:var(--accent)">$1</a>');
+}
+
+// ─── Summary card ─────────────────────────────────────────────────────────────
+function extractSummary(text) {
+  const match = text.match(/<SERENITY_JSON>([\s\S]*?)<\/SERENITY_JSON>/);
+  if (!match) return { summary: null, cleanText: text };
+  try {
+    const summary = JSON.parse(match[1].trim());
+    const cleanText = text.replace(/<SERENITY_JSON>[\s\S]*?<\/SERENITY_JSON>/, '').trim();
+    return { summary, cleanText };
+  } catch {
+    return { summary: null, cleanText: text };
+  }
+}
+
+function renderSummaryCard(s) {
+  const p = s.priority || 3;
+  const pClass = `p${p}`;
+  const pLabel = {5:'HIGHEST',4:'HIGH',3:'MEDIUM',2:'LOW',1:'LOWEST'}[p] || '';
+  const chainLabels = {
+    controls:'控制稀缺层', supplies:'供应稀缺层',
+    benefits:'受益于主题', weak:'控制力弱', story:'纯叙事'
+  };
+  const dots = Array.from({length:5}, (_,i) =>
+    `<div class="priority-dot ${i < p ? `filled ${pClass}` : ''}"></div>`).join('');
+  const evidenceFill = {strong:3, medium:2, weak:1}[s.evidence_strength] || 1;
+  const evidenceDots = Array.from({length:3}, (_,i) =>
+    `<div class="evidence-dot ${i < evidenceFill ? `filled ${s.evidence_strength}` : ''}"></div>`).join('');
+  const scarceChips = (s.scarce_layers||[]).map(l =>
+    `<span class="scarce-chip">${l}</span>`).join('');
+  const risks = (s.top_risks||[]).slice(0,3).map(r =>
+    `<div class="risk-item"><div class="risk-dot"></div><span>${r}</span></div>`).join('');
+
+  const card = document.getElementById('summaryCard');
+  card.style.display = '';
+  card.innerHTML = `
+    <div class="summary-card">
+      <div class="summary-top">
+        <div>
+          <div class="priority-score ${pClass}">${p}<span style="font-size:14px;font-weight:400;color:var(--text-3)">/5</span></div>
+          <div class="priority-dots">${dots}</div>
+        </div>
+        <div class="summary-meta">
+          <div class="summary-verdict">${s.verdict || ''}</div>
+          <div class="summary-missing">${s.what_market_missing || ''}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+          <span class="chain-badge ${s.chain_control||'story'}">${chainLabels[s.chain_control]||s.chain_control}</span>
+          <div class="evidence-bar">
+            <div class="evidence-dots">${evidenceDots}</div>
+            <span class="evidence-label ${s.evidence_strength}">${(s.evidence_strength||'').toUpperCase()}</span>
+          </div>
+        </div>
+      </div>
+      <div class="summary-grid">
+        <div>
+          <div class="summary-section-label">产业链卡点</div>
+          <div class="scarce-chips">${scarceChips || '<span style="color:var(--text-3);font-size:12px">暂无数据</span>'}</div>
+        </div>
+        <div>
+          <div class="summary-section-label">核心风险</div>
+          <div class="risk-items">${risks}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ─── Actions ──────────────────────────────────────────────────────────────────
+function copyAnalysis() {
+  if (!analysisText) return;
+  navigator.clipboard.writeText(analysisText).then(() => {
+    const btn = event.target;
+    const orig = btn.textContent;
+    btn.textContent = '已复制';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+}
+
+function clearOutput() {
+  if (abortController) { abortController.abort(); abortController = null; }
+  analysisText = '';
+  document.getElementById('emptyState').style.display = '';
+  document.getElementById('analysisOutput').style.display = 'none';
+  document.getElementById('outputHeader').style.display = 'none';
+  document.getElementById('mdOutput').innerHTML = '';
+  document.getElementById('summaryCard').style.display = 'none';
+  document.getElementById('summaryCard').innerHTML = '';
+  document.getElementById('tickerInput').value = '';
+  document.getElementById('marketBadge').textContent = '--';
+  document.getElementById('marketBadge').className = 'ticker-badge unknown';
+  document.getElementById('headerTickerInput').value = '';
+  document.getElementById('headerMarketBadge').textContent = '--';
+  document.getElementById('headerMarketBadge').className = 'ticker-badge unknown';
+}
+
+// ─── Sector Panel ─────────────────────────────────────────────────────────────
+const MOCK_PRICES = {
+  // AI chain
+  'AMAT':'+1.2','CEG':'+0.9','VST':'+2.3','NEE':'-0.4',
+  'TSM':'+1.4','INTC':'-0.3','UMC':'+0.7','SMIC':'+1.1',
+  'NVDA':'+2.7','AMD':'+1.9','AVGO':'+1.3','MRVL':'+2.2','ARM':'+1.5',
+  'MU':'+3.1','WDC':'+0.5','SK':'+0.9',
+  'MSFT':'+0.6','GOOG':'+1.1','AMZN':'+0.8','META':'+1.8',
+  'PLTR':'+4.2','NOW':'+1.2','CRM':'+1.5','SNOW':'+2.8','DDOG':'+2.1',
+  // Top gainers
+  'SMCI':'+6.8','RKLB':'+5.1','MSTR':'+4.7','COIN':'+3.9',
+  'IONQ':'+3.4','RIVN':'+2.9','HOOD':'+2.6','LLY':'+2.1',
+  // Crypto
+  'BTC':'+1.8','ETH':'+2.3','SOL':'+3.4','BNB':'+1.1',
+  'DOGE':'+5.2','PEPE':'+8.7','WIF':'+6.3','JUP':'+4.1',
+  'INJ':'+3.8','SUI':'+4.5','ARB':'+2.9','OP':'+2.4',
+  'LINK':'+2.1','AVAX':'+1.7','DOT':'+1.3','NEAR':'+2.8',
+  'RNDR':'+3.6','FET':'+4.2',
+};
+
+function getChange(ticker) {
+  return MOCK_PRICES[ticker] || (function(){
+    let h = 0;
+    for (let c of ticker) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
+    const sign = h % 5 === 0 ? '-' : '+';
+    return sign + ((h % 40 + 1) / 10).toFixed(1);
+  })();
+}
+
+function changeClass(v) {
+  const n = parseFloat(v);
+  if (n > 0) return 'up';
+  if (n < 0) return 'down';
+  return 'flat';
+}
+
+const SECTOR_DATA = {
+  ai: {
+    title: 'Serenity · AI 产业链供需图',
+    subtitle: '上游 → 下游',
+    type: 'chain',
+    layers: [
+      { name: '能源 / 基础设施', tickers: ['AMAT','CEG','VST','NEE'] },
+      { name: '晶圆制造', tickers: ['TSM','INTC','UMC'] },
+      { name: '算力芯片', star: '★ 焦点层', tickers: ['NVDA','AMD','AVGO','MRVL','ARM'] },
+      { name: '存储 / HBM', tickers: ['MU','WDC'] },
+      { name: '平台 / 云', tickers: ['MSFT','GOOG','AMZN'] },
+      { name: 'AI 应用', tickers: ['META','PLTR','NOW','SNOW','DDOG'] },
+    ]
+  },
+  space: {
+    title: 'Serenity · 航天 / 国防 产业链',
+    subtitle: '上游 → 下游',
+    type: 'chain',
+    layers: [
+      { name: '原材料 / 精密加工', tickers: ['HII','TXT','HXL'] },
+      { name: '推进系统', tickers: ['RKLB','ASTR','KTOS'] },
+      { name: '卫星 / 载具', star: '★ 焦点层', tickers: ['RKLB','ASTS','LUNR'] },
+      { name: '国防电子', tickers: ['LMT','RTX','NOC','GD'] },
+      { name: '地面软件', tickers: ['PLTR','BWXT','SAIC'] },
+    ]
+  },
+  biotech: {
+    title: 'Serenity · 生物科技 产业链',
+    subtitle: '研发 → 商业化',
+    type: 'chain',
+    layers: [
+      { name: 'AI 药物发现', tickers: ['RXRX','SDGR','EXAI'] },
+      { name: '临床 CRO', tickers: ['ICLR','CRL','MEDP'] },
+      { name: 'GLP-1 / 肥胖症', star: '★ 焦点层', tickers: ['LLY','NVO','AMGN'] },
+      { name: '基因治疗', tickers: ['BEAM','CRSP','NTLA','EDIT'] },
+      { name: '商业化 / 分发', tickers: ['MRNA','BNTX','PFE'] },
+    ]
+  },
+  gainers: {
+    title: '今日涨幅榜',
+    subtitle: '美股热门',
+    type: 'list',
+    items: ['PLTR','SMCI','MU','NVDA','RKLB','ARM','MSTR','COIN','IONQ','RIVN','HOOD','LLY']
+  },
+  crypto: {
+    title: '链上热门',
+    subtitle: '加密货币 24h',
+    type: 'list',
+    items: ['DOGE','PEPE','WIF','SUI','INJ','SOL','ARB','JUP','RNDR','FET','NEAR','BTC','ETH']
+  },
+  watchlist: {
+    title: '自选',
+    subtitle: '我的关注列表',
+    type: 'watchlist',
+  },
+};
+
+let currentSectorTab = 'ai';
+
+function switchSectorTab(tab) {
+  currentSectorTab = tab;
+  document.querySelectorAll('.sector-tab').forEach(el => {
+    el.classList.toggle('active', el.dataset.tab === tab);
+  });
+  renderSectorPanel();
+}
+
+function renderSectorPanel() {
+  const panel = document.getElementById('sectorPanel');
+  const tab = currentSectorTab;
+
+  // For 'ai', also show sub-sector tabs for the three chains
+  if (tab === 'ai') {
+    renderChainWithSubTabs(panel);
+    return;
+  }
+
+  const data = SECTOR_DATA[tab];
+  if (!data) { panel.innerHTML = ''; return; }
+
+  if (data.type === 'chain') {
+    panel.innerHTML = renderChain(data);
+  } else if (data.type === 'list') {
+    panel.innerHTML = renderList(data);
+  } else if (data.type === 'watchlist') {
+    panel.innerHTML = renderWatchlist();
+  }
+}
+
+let currentChainKey = 'ai';
+
+function renderChainWithSubTabs(panel) {
+  const chains = [
+    { key: 'ai', label: 'AI' },
+    { key: 'space', label: '航天' },
+    { key: 'biotech', label: '医药' },
+  ];
+  const tabs = chains.map(c =>
+    `<div class="sector-tab ${c.key===currentChainKey?'active':''}" style="font-size:11px" onclick="switchChain('${c.key}')">${c.label}</div>`
+  ).join('');
+
+  const data = SECTOR_DATA[currentChainKey];
+  panel.innerHTML = `
+    <div class="sector-tabs" style="margin-bottom:10px">${tabs}</div>
+    ${renderChain(data)}
+  `;
+}
+
+function switchChain(key) {
+  currentChainKey = key;
+  renderSectorPanel();
+}
+
+function renderChain(data) {
+  const layers = data.layers.map(layer => {
+    const chips = layer.tickers.map(t => {
+      const change = getChange(t);
+      return `<div class="chain-chip" onclick="selectAndAnalyze('${t}')">
+        <span class="chip-ticker">${t}</span>
+        <span class="chip-change ${changeClass(change)}">${change}%</span>
+      </div>`;
+    }).join('');
+    const isFocus = !!layer.star;
+    return `<div class="chain-layer">
+      <div class="chain-layer-header">
+        <div class="chain-layer-dot ${isFocus?'focus':''}"></div>
+        <span class="chain-layer-name">${layer.name}</span>
+        ${isFocus ? `<span class="chain-layer-star">${layer.star}</span>` : ''}
+      </div>
+      <div class="chain-chips">${chips}</div>
+    </div>`;
+  }).join('');
+
+  return `<div class="sector-title-row">
+    <span class="sector-title">${data.title}</span>
+    <span class="sector-subtitle">${data.subtitle}</span>
+  </div>
+  ${layers}
+  <button class="sector-action-btn" onclick="focusInput()">🔍 更多标的，自选分析 ›</button>`;
+}
+
+function renderList(data) {
+  const items = data.items.map((t, i) => {
+    const change = getChange(t);
+    const dbEntry = TICKER_DB.find(d => d.t === t);
+    const name = dbEntry ? dbEntry.n : t;
+    return `<div class="chain-list-item" onclick="selectAndAnalyze('${t}')">
+      <div class="list-left">
+        <span class="list-rank">${i+1}</span>
+        <div>
+          <div class="list-ticker">${t}</div>
+          <div class="list-name">${name}</div>
+        </div>
+      </div>
+      <span class="list-change ${changeClass(change)}">${change}%</span>
+    </div>`;
+  }).join('');
+
+  return `<div class="sector-title-row">
+    <span class="sector-title">${data.title}</span>
+    <span class="sector-subtitle">${data.subtitle}</span>
+  </div>
+  <div class="chain-list">${items}</div>`;
+}
+
+function renderWatchlist() {
+  if (history.length === 0) {
+    return `<div style="text-align:center;padding:32px 0;color:var(--text-3);font-size:13px">
+      <div style="font-size:28px;margin-bottom:8px;opacity:.4">★</div>
+      分析过的标的将自动出现在这里
+    </div>`;
+  }
+  const items = history.map((t, i) => {
+    const change = getChange(t);
+    const dbEntry = TICKER_DB.find(d => d.t === t);
+    const name = dbEntry ? dbEntry.n : '';
+    return `<div class="chain-list-item" onclick="selectAndAnalyze('${t}')">
+      <div class="list-left">
+        <div>
+          <div class="list-ticker">${t}</div>
+          ${name ? `<div class="list-name">${name}</div>` : ''}
+        </div>
+      </div>
+      <span class="list-change ${changeClass(change)}">${change}%</span>
+    </div>`;
+  }).join('');
+  return `<div class="sector-title-row">
+    <span class="sector-title">自选</span>
+    <span class="sector-subtitle" style="cursor:pointer;color:var(--text-3)" onclick="clearHistory()">清空</span>
+  </div>
+  <div class="chain-list">${items}</div>`;
+}
+
+function selectAndAnalyze(ticker) {
+  const input = document.getElementById('tickerInput');
+  input.value = ticker;
+  input.dispatchEvent(new Event('input'));
+  hideAutocomplete();
+  startAnalysis();
+}
+
+function focusInput() {
+  document.getElementById('tickerInput').focus();
+  document.getElementById('tickerInput').select();
+}
+
+function clearHistory() {
+  history = [];
+  localStorage.removeItem('sr_history');
+  renderHistory();
+  renderSectorPanel();
+}
+
+// ─── Example collapse / expand ────────────────────────────────────────────────
+const exExpandedState = { nvda: true, btc: false, tsla: false, sol: false };
+
+function toggleExample(key) {
+  exExpandedState[key] = !exExpandedState[key];
+  const body = document.getElementById('ex-body-' + key);
+  const toggle = document.getElementById('ex-toggle-' + key);
+  if (exExpandedState[key]) {
+    body.style.maxHeight = body.scrollHeight + 'px';
+    body.style.borderTop = '';
+    toggle.classList.remove('closed');
+    toggle.classList.add('open');
+    // Recalc after content loads
+    setTimeout(() => { body.style.maxHeight = body.scrollHeight + 'px'; }, 10);
+  } else {
+    body.style.maxHeight = '0';
+    body.style.borderTop = 'none';
+    toggle.classList.remove('open');
+    toggle.classList.add('closed');
+  }
+}
+
+function initExamples() {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const body = document.getElementById('ex-body-nvda');
+      if (body) {
+        body.style.maxHeight = body.scrollHeight + 'px';
+        body.style.borderTop = '';
+      }
+    });
+  });
+}
+
+// ─── Header search (for switching tickers while analysis is visible) ──────────
+function startHeaderSearch() {
+  const val = document.getElementById('headerTickerInput').value.trim();
+  if (!val) return;
+  document.getElementById('tickerInput').value = val;
+  document.getElementById('tickerInput').dispatchEvent(new Event('input'));
+  hideHeaderAutocomplete();
+  startAnalysis();
+}
+
+function showHeaderAutocomplete(q) {
+  const dropdown = document.getElementById('headerAcDropdown');
+  const results = searchLocal(q);
+  if (!results.length || !q) { hideHeaderAutocomplete(); return; }
+  dropdown.innerHTML = results.map(d => `
+    <div class="ac-item" onclick="selectHeaderTicker('${d.t}','${d.m}')">
+      <span class="ac-ticker">${d.t}</span>
+      <span class="ac-name">${d.n}</span>
+    </div>`).join('');
+  dropdown.classList.add('open');
+}
+
+function hideHeaderAutocomplete() {
+  document.getElementById('headerAcDropdown').classList.remove('open');
+}
+
+function selectHeaderTicker(ticker, market) {
+  document.getElementById('headerTickerInput').value = ticker;
+  const badge = document.getElementById('headerMarketBadge');
+  if (market === 'US') { badge.textContent = 'US'; badge.className = 'ticker-badge us'; }
+  else { badge.textContent = '⬡'; badge.className = 'ticker-badge crypto'; }
+  hideHeaderAutocomplete();
+  document.getElementById('tickerInput').value = ticker;
+  document.getElementById('tickerInput').dispatchEvent(new Event('input'));
+  startAnalysis();
+}
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
