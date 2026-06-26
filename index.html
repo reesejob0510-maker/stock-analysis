@@ -1098,6 +1098,91 @@ body {
 }
 .header-ac-dropdown.open { display: block; }
 
+/* ─── Mobile responsive ───────────────────── */
+.mobile-sector-btn { display: none; }
+
+@media (max-width: 768px) {
+  html, body { height: auto; overflow: auto; }
+
+  body { overflow-x: hidden; }
+
+  .header-sub { display: none; }
+  .mobile-sector-btn { display: flex; }
+  .header-search-wrap { display: none; }
+  .output-name { display: none; }
+
+  .layout {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  /* Sidebar: hidden by default, slides down when toggled */
+  .sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 0;
+    overflow: hidden;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    transition: max-height .3s ease;
+    flex-shrink: 0;
+  }
+  .sidebar.mobile-open {
+    max-height: 520px;
+    overflow-y: auto;
+  }
+  .sidebar-inner {
+    height: auto !important;
+    padding: 12px 16px;
+  }
+  .sector-panel { max-height: 320px; overflow-y: auto; }
+
+  /* Main area */
+  .main { overflow: visible; height: auto; }
+
+  #outputArea { height: auto; overflow: visible; }
+
+  /* Hero */
+  .hero-wrap {
+    padding: 28px 16px 20px;
+    max-width: 100%;
+    gap: 14px;
+  }
+  .hero-brand { font-size: 18px; }
+  .hero-sub { font-size: 12px; }
+  .hero-input-outer { max-width: 100%; }
+  #tickerInput { font-size: 15px; padding: 12px 8px 12px 4px; }
+  .btn-hero-analyze { padding: 12px 14px; font-size: 13px; }
+  .hero-quick-chips { gap: 5px; }
+  .hero-quick-chip { font-size: 11px; padding: 4px 10px; }
+
+  /* Examples */
+  .examples-section { padding: 0 16px 40px; max-width: 100%; }
+  .example-card-header { flex-wrap: wrap; gap: 6px; }
+  .ex-name { display: none; }
+  .btn-analyze-this {
+    order: 10;
+    width: 100%;
+    margin-top: 2px;
+    text-align: center;
+    padding: 6px;
+  }
+
+  /* Analysis output */
+  .output-header { padding: 0 14px; gap: 8px; }
+  .output-ticker { font-size: 15px; }
+  #outputArea { padding: 0; }
+  .md-output { font-size: 13.5px; }
+  #outputArea > div { padding: 16px; }
+
+  /* Summary card */
+  .summary-card { padding: 12px 14px; }
+  .summary-top { flex-wrap: wrap; gap: 10px; }
+  .summary-grid { grid-template-columns: 1fr; }
+  .priority-score { font-size: 28px; }
+}
+
 /* ─── Compact Mode ───────────────────────────── */
 .mode-compact { margin: 12px 0 8px; flex-shrink: 0; }
 .mode-compact-label {
@@ -1134,8 +1219,8 @@ body {
   <div class="logo"><span>Serenity</span> Research</div>
   <div class="header-sub">产业链卡点分析 · 美股 &amp; 加密货币</div>
   <div class="header-right">
+    <button class="btn-icon mobile-sector-btn" onclick="toggleMobileSidebar()">板块 ☰</button>
     <div id="apiStatusBadge" class="api-status none">连接中...</div>
-    <button class="btn-icon" onclick="openSettings()">设置</button>
   </div>
 </header>
 
@@ -1490,21 +1575,18 @@ body {
 <div class="modal-overlay" id="settingsModal">
   <div class="modal">
     <div class="modal-title">设置</div>
-    <div class="modal-sub">由管理员配置，普通用户无需修改</div>
+    <div class="modal-sub">选择分析模型</div>
 
-    <div class="field-label">代理服务地址</div>
-    <input class="field-input" id="proxyUrlInput" type="text" placeholder="https://serenity-proxy.yourname.workers.dev" />
-    <div class="field-note">部署 Cloudflare Worker 后填入，所有用户共用此地址。</div>
-
-    <div class="field-label">访问码（可选）</div>
-    <input class="field-input" id="accessCodeInput" type="password" placeholder="如未设置则留空" />
-    <div class="field-note" style="margin-top:-12px;margin-bottom:16px">Worker 设置了 ACCESS_CODE 环境变量时才需要填写。</div>
+    <!-- Hidden fields, kept for JS compatibility -->
+    <input id="proxyUrlInput" type="hidden" />
+    <input id="accessCodeInput" type="hidden" />
 
     <div class="field-label">模型</div>
     <select class="field-input" id="modelSelect">
       <option value="deepseek-chat">deepseek-chat（V3，快速，推荐）</option>
-      <option value="deepseek-reasoner">deepseek-reasoner（R1，深度推理）</option>
+      <option value="deepseek-reasoner">deepseek-reasoner（R1，深度推理，较慢）</option>
     </select>
+    <div class="field-note">V3 适合日常快速研究；R1 会进行多步推理，分析更深但耗时约 2–3 倍。</div>
 
     <div class="modal-row">
       <button class="btn-primary" onclick="saveSettings()">保存</button>
@@ -2418,12 +2500,17 @@ function selectAndAnalyze(ticker) {
   input.value = ticker;
   input.dispatchEvent(new Event('input'));
   hideAutocomplete();
+  document.querySelector('.sidebar').classList.remove('mobile-open');
   startAnalysis();
 }
 
 function focusInput() {
   document.getElementById('tickerInput').focus();
   document.getElementById('tickerInput').select();
+}
+
+function toggleMobileSidebar() {
+  document.querySelector('.sidebar').classList.toggle('mobile-open');
 }
 
 function clearHistory() {
