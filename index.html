@@ -1681,6 +1681,7 @@ function init() {
   renderSectorPanel();
   checkProxy();
   initExamples();
+  fetchRealPrices(); // load live prices in background
 
   const input = document.getElementById('tickerInput');
 
@@ -2267,32 +2268,83 @@ function clearOutput() {
 }
 
 // ─── Sector Panel ─────────────────────────────────────────────────────────────
+// Live price cache (populated by fetchRealPrices)
+const LIVE_PRICES = {};
+let pricesLoaded = false;
+
+// Crypto ticker → Yahoo Finance symbol map
+const CRYPTO_YAHOO = {
+  'BTC':'BTC-USD','ETH':'ETH-USD','SOL':'SOL-USD','BNB':'BNB-USD',
+  'DOGE':'DOGE-USD','PEPE':'PEPE-USD','WIF':'WIF-USD','JUP':'JUP-USD',
+  'INJ':'INJ-USD','SUI':'SUI-USD','ARB':'ARB-USD','OP':'OP-USD',
+  'LINK':'LINK-USD','AVAX':'AVAX-USD','DOT':'DOT-USD','NEAR':'NEAR-USD',
+  'RNDR':'RENDER-USD','FET':'FET-USD','XRP':'XRP-USD','ADA':'ADA-USD',
+};
+
+async function fetchRealPrices() {
+  try {
+    // Collect all unique tickers from sector data
+    const stockSymbols = [];
+    const cryptoSymbols = [];
+    Object.values(SECTOR_DATA).forEach(s => {
+      const items = s.layers ? s.layers.flatMap(l => l.tickers) : (s.items || []);
+      items.forEach(t => {
+        if (CRYPTO_YAHOO[t]) { if (!cryptoSymbols.includes(CRYPTO_YAHOO[t])) cryptoSymbols.push(CRYPTO_YAHOO[t]); }
+        else { if (!stockSymbols.includes(t)) stockSymbols.push(t); }
+      });
+    });
+    // Also include quick chips
+    ['NVDA','BTC','TSLA','SOL','AMD','ETH','PLTR','SMCI'].forEach(t => {
+      const y = CRYPTO_YAHOO[t];
+      if (y) { if (!cryptoSymbols.includes(y)) cryptoSymbols.push(y); }
+      else { if (!stockSymbols.includes(t)) stockSymbols.push(t); }
+    });
+
+    const allYahooSymbols = [...stockSymbols, ...cryptoSymbols];
+    if (!allYahooSymbols.length) return;
+
+    const url = `${PROXY_URL}/prices?s=${allYahooSymbols.join(',')}`;
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    // Store in LIVE_PRICES keyed by original ticker
+    Object.entries(data).forEach(([sym, info]) => {
+      if (!info) return;
+      const sign = info.change >= 0 ? '+' : '';
+      const str = `${sign}${info.change.toFixed(1)}`;
+      // Map back Yahoo symbol → ticker
+      const origCrypto = Object.entries(CRYPTO_YAHOO).find(([,v]) => v === sym)?.[0];
+      const key = origCrypto || sym;
+      LIVE_PRICES[key] = str;
+    });
+
+    pricesLoaded = true;
+    renderSectorPanel(); // Re-render with real prices
+  } catch(e) {
+    // Silently fall back to mock prices
+  }
+}
+
+// Fallback mock prices (used before real data loads)
 const MOCK_PRICES = {
-  // AI chain
   'AMAT':'+1.2','CEG':'+0.9','VST':'+2.3','NEE':'-0.4',
-  'TSM':'+1.4','INTC':'-0.3','UMC':'+0.7','SMIC':'+1.1',
-  'NVDA':'+2.7','AMD':'+1.9','AVGO':'+1.3','MRVL':'+2.2','ARM':'+1.5',
-  'MU':'+3.1','WDC':'+0.5','SK':'+0.9',
-  'MSFT':'+0.6','GOOG':'+1.1','AMZN':'+0.8','META':'+1.8',
-  'PLTR':'+4.2','NOW':'+1.2','CRM':'+1.5','SNOW':'+2.8','DDOG':'+2.1',
-  // Top gainers
+  'TSM':'+1.4','INTC':'-0.3','UMC':'+0.7','NVDA':'+2.7',
+  'AMD':'+1.9','AVGO':'+1.3','MRVL':'+2.2','ARM':'+1.5',
+  'MU':'+3.1','WDC':'+0.5','MSFT':'+0.6','GOOG':'+1.1',
+  'AMZN':'+0.8','META':'+1.8','PLTR':'+4.2','NOW':'+1.2',
   'SMCI':'+6.8','RKLB':'+5.1','MSTR':'+4.7','COIN':'+3.9',
-  'IONQ':'+3.4','RIVN':'+2.9','HOOD':'+2.6','LLY':'+2.1',
-  // Crypto
   'BTC':'+1.8','ETH':'+2.3','SOL':'+3.4','BNB':'+1.1',
-  'DOGE':'+5.2','PEPE':'+8.7','WIF':'+6.3','JUP':'+4.1',
-  'INJ':'+3.8','SUI':'+4.5','ARB':'+2.9','OP':'+2.4',
-  'LINK':'+2.1','AVAX':'+1.7','DOT':'+1.3','NEAR':'+2.8',
-  'RNDR':'+3.6','FET':'+4.2',
+  'DOGE':'+5.2','SUI':'+4.5','LINK':'+2.1','AVAX':'+1.7',
 };
 
 function getChange(ticker) {
-  return MOCK_PRICES[ticker] || (function(){
-    let h = 0;
-    for (let c of ticker) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
-    const sign = h % 5 === 0 ? '-' : '+';
-    return sign + ((h % 40 + 1) / 10).toFixed(1);
-  })();
+  if (LIVE_PRICES[ticker] !== undefined) return LIVE_PRICES[ticker];
+  if (MOCK_PRICES[ticker] !== undefined) return MOCK_PRICES[ticker];
+  let h = 0;
+  for (let c of ticker) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
+  const sign = h % 5 === 0 ? '-' : '+';
+  return sign + ((h % 40 + 1) / 10).toFixed(1);
 }
 
 function changeClass(v) {
@@ -2437,7 +2489,10 @@ function renderChain(data) {
 
   return `<div class="sector-title-row">
     <span class="sector-title">${data.title}</span>
-    <span class="sector-subtitle">${data.subtitle}</span>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="sector-subtitle">${data.subtitle}</span>
+      <span style="font-size:10px;padding:1px 6px;border-radius:3px;font-weight:600;${pricesLoaded ? 'background:var(--green-dim);color:var(--green)' : 'background:var(--bg-hover);color:var(--text-3)'}" title="点击刷新" onclick="fetchRealPrices()" style="cursor:pointer">${pricesLoaded ? '● 实时' : '○ 加载中'}</span>
+    </div>
   </div>
   ${layers}
   <button class="sector-action-btn" onclick="focusInput()">🔍 更多标的，自选分析 ›</button>`;
